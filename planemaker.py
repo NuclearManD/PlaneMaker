@@ -14,6 +14,9 @@ Cw = None # wing chord
 Lw = None # wing length
 Lf = None # fuselage length
 
+Cv = None # Vertical tail volume coefficient
+Ch = None # Horizontal tail volume coefficient
+
 Aw = None # area of the wing
 Af = None # fuselage cross-sectional area
 Aht = None # horizontal tail, area of a single side
@@ -76,7 +79,33 @@ def ask_density_of(obj):
         'ABS':1100
     }
     return get_float_options('Density of {} (kg/m3)?'.format(obj), options, 'kg/m3')
+# COEFS
 
+def get_tail_v_coef():
+    global Cv
+    if Cv==None:
+        options = {
+            'Glider':.02,
+            '1 Engine':.04,
+            '2 Engine':.07,
+            'Fighter Jet':.07,
+            'Jet':.09
+            }
+        Cv = get_float_options('Vertical Tail Volume Coef?', options)
+    return Cv
+
+def get_tail_h_coef():
+    global Ch
+    if Ch==None:
+        options = {
+            'Glider':.50,
+            '1 Engine':.70,
+            '2 Engine':.80,
+            'Fighter Jet':.40,
+            'Jet':1
+            }
+        Ch = get_float_options('Horizontal Tail Volume Coef?', options)
+    return Ch
 # FORCES
 
 def calc_lift_force():
@@ -231,6 +260,33 @@ def get_drag_constant():
         cd = get_float("Drag coefficient?", 0.005)
     return cd
 
+def print_results():
+    print("\n\nResults:")
+    
+    if Qw>1:
+        # use meters
+        print("Payload is at zero meters.")
+        print("Wing location: {} m".format(Qw))
+        print("Tail location: {} m".format(Qvc))
+        print("Vertical stabilizer area: {} m2".format(get_tail_area_v()))
+        print("Horizontal stabilizer area: {} m2".format(2*get_tail_area_h()))
+    else:
+        # use centimeters
+        print("Payload is at zero cm.")
+        print("Wing location: {} cm".format(Qw*100))
+        print("Tail location: {} cm".format(Qvc*100))
+        print("Vertical stabilizer area: {} cm2".format(get_tail_area_v()*10000))
+        print("Horizontal stabilizer area: {} cm2".format(2*get_tail_area_h()*10000))
+    print()
+    print("Total plane mass: {} kg".format(get_plane_mass()))
+    print("Lift force: {} kg*m/s3".format(calc_lift_force()))
+    print("Drag force: {} kg*m/s3".format(calc_drag_force()))
+    print("Grav force: {} kg*m/s3".format(calc_gravity_force()))
+    if calc_gravity_force()>calc_lift_force():
+        print("WARNING:  This plane will NOT fly at angle of attack<=0 degrees.  Caution!")
+
+
+
 """
 steps:
 1. determine tail shape
@@ -260,8 +316,8 @@ if __name__=='__main__':
         Qtwd = -1
     # Now calculate the rest of the shape of the tail
 
-    Aht = .41*get_wing_area()*get_wing_chord()/Qtwd
-    Avt = .25*get_wing_area()*get_wingspan()/Qtwd
+    Aht = get_tail_h_coef()*get_wing_area()*get_wing_chord()/Qtwd
+    Avt = get_tail_v_coef()*get_wing_area()*get_wingspan()/Qtwd
 
     if not has_wing_size:
         # TODO: optimize wing size here
@@ -286,27 +342,4 @@ if __name__=='__main__':
     calc_gravity_force()
     get_plane_mass()
     
-
-    print("\n\nResults:")
-    
-    if Qw>1:
-        # use meters
-        print("Payload is at zero meters.")
-        print("Wing location: {} m".format(Qw))
-        print("Tail location: {} m".format(Qvc))
-        print("Vertical stabilizer area: {} m2".format(get_tail_area_v()))
-        print("Horizontal stabilizer area: {} m2".format(get_tail_area_h()))
-    else:
-        # use centimeters
-        print("Payload is at zero cm.")
-        print("Wing location: {} cm".format(Qw*100))
-        print("Tail location: {} cm".format(Qvc*100))
-        print("Vertical stabilizer area: {} cm2".format(get_tail_area_v()*10000))
-        print("Horizontal stabilizer area: {} cm2".format(get_tail_area_h()*10000))
-    print()
-    print("Total plane mass: {} kg".format(get_plane_mass()))
-    print("Lift force: {} kg*m/s3".format(calc_lift_force()))
-    print("Drag force: {} kg*m/s3".format(calc_drag_force()))
-    print("Grav force: {} kg*m/s3".format(calc_gravity_force()))
-    if calc_gravity_force()>calc_lift_force():
-        print("WARNING:  This plane will NOT fly at angle of attack<=0 degrees.  Caution!")
+    print_results()
