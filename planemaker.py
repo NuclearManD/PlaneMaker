@@ -12,6 +12,7 @@ Qvc = None # tail location
 Qcl = None # center of lift (equals Qcg, or center of gravity)
 Cw = None # wing chord
 Lw = None # wing length
+Lf = None # fuselage length
 
 Aw = None # area of the wing
 Af = None # fuselage cross-sectional area
@@ -38,6 +39,8 @@ v = None # plane velocity
 cl = None # lift constant
 cd = None # drag constant
 theta = None # angle of flat wing
+
+# QUESTIONS
 
 def ask_yn(question):
     return input(question+'[Y/n]')=='Y'
@@ -84,6 +87,8 @@ def calc_drag_force():
     'calculates for changes due to optimization'
     # 1.2 is roughly the density of air in kg/m3
     return (get_drag_constant()*(get_plane_velocity()**2)*get_wing_area()*1.2)/2
+def calc_gravity_force():
+    return get_plane_mass()*9.81
 
 # DENSITIES
 
@@ -153,6 +158,13 @@ def get_tail_volume():
     if Vt==None:
         Vt = get_tail_thickness()*(get_tail_area_v()+get_tail_area_h()*2)
     return Vt
+def get_fuselage_volume():
+    global Vf
+    if Vf==None:
+        if Lf==None:
+            raise Exception("Fuselage length not yet calculated!")
+        Vf = Lf*get_fuselage_area()
+    return Vf
 
 
 # MASSES
@@ -266,6 +278,7 @@ if __name__=='__main__':
 
     Qcl = Qw - cw4
     Qvc = Qw+Qtwd
+    Lf = Qvc+math.sqrt(get_tail_area_h())/3
     
     if Qw>1:
         # use meters
@@ -281,3 +294,8 @@ if __name__=='__main__':
         print("Tail location: {} cm".format(Qvc)*100)
         print("Vertical stabilizer area: {} cm2".format(get_tail_area_v()*10000))
         print("Horizontal stabilizer area: {} cm2".format(get_tail_area_h()*10000))
+    print("Lift force: {} kg*m/s3".format(calc_lift_force()))
+    print("Drag force: {} kg*m/s3".format(calc_drag_force()))
+    print("Grav force: {} kg*m/s3".format(calc_gravity_force()))
+    if calc_gravity_force()>calc_lift_force():
+        print("WARNING:  This plane will NOT fly at angle of attack<=0 degrees.  Caution!")
