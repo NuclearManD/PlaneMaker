@@ -12,16 +12,27 @@ Qvc = None # tail location
 Qcl = None # center of lift (equals Qcg, or center of gravity)
 Cw = None # wing chord
 Lw = None # wing length
+
 Aw = None # area of the wing
 Af = None # fuselage cross-sectional area
+Aht = None # horizontal tail, area of a single side
+Avt = None # vertical tail area
+
 Tw = None # thickness of the wing
 Tt = None # thickness of the tail
+
 Vw = None # wing volume
+Vt = None # tail volume
+Vf = None # fuselage volume
+
 Dw = None # wing density (kg/m3)
+Dt = None # density of the tail
+Df = None # density of the fuselage
 
 Mc = None  # payload mass (kg)
 Mw = None  # wing mass
 Mf = None  # fuselage mass
+Mt = None  # tail mass
 
 v = None # plane velocity
 cl = None # lift constant
@@ -62,11 +73,123 @@ def ask_density_of(obj):
         'ABS':1100
     }
     return get_float_options('Density of {} (kg/m3)?'.format(obj), options, 'kg/m3')
+
+# FORCES
+
+def calc_lift_force():
+    'calculates for changes due to optimization'
+    # 1.2 is roughly the density of air in kg/m3
+    return (get_lift_constant()*(get_plane_velocity()**2)*get_wing_area()*1.2)/2
+def calc_drag_force():
+    'calculates for changes due to optimization'
+    # 1.2 is roughly the density of air in kg/m3
+    return (get_drag_constant()*(get_plane_velocity()**2)*get_wing_area()*1.2)/2
+
+# DENSITIES
+
+def get_wing_density():
+    global Dw
+    if Dw==None:
+        # in kg/m3
+        Dw = ask_density_of('wing')
+    return Dw
+def get_tail_density():
+    global Dt
+    if Dt==None:
+        Dt = ask_density_of('tail')
+    return Dt
+def get_fuselage_density():
+    global Df
+    if Df==None:
+        Df = ask_density_of('fuselage')
+    return Df
+
+# THICKNESSES
+
+def get_wing_thickness():
+    global Tw
+    if Tw==None:
+        Tw = get_float("Wing thickness (in cm)?")/100 # convert to meters
+    return Tw
+def get_tail_thickness():
+    global Tt
+    if Tt==None:
+        Tt = get_float("Tail thickness (in cm)?")/100 # convert to meters
+    return Tt
+
+# AREAS
+
+def get_fuselage_area():
+    global Af
+    if Af==None:
+        Af = get_float('Cross-sectional area of fuselage (in cm2)?')/10000
+    return Af
+def get_wing_area():
+    'returns area of BOTH wings together'
+    global Aw
+    if Aw==None:
+        # we assume that the wing has a parabolic shape for now
+        # 2*2/3*wing length*wing chord
+        Aw = get_wingspan()*get_wing_chord()*2/3
+    return Aw
+def get_tail_area_v():
+    if Avt==None:
+        raise Exception("Requested tail vertical area before value was calculated.")
+    return Avt
+def get_tail_area_h():
+    if Aht==None:
+        raise Exception("Requested tail vertical area before value was calculated.")
+    return Aht
+
+# VOLUMES
+
+def get_wing_volume():
+    global Vw
+    if Vw==None:
+        Vw = get_wing_thickness()*get_wing_area()
+    return Vw
+def get_tail_volume():
+    global Vt
+    if Vt==None:
+        Vt = get_tail_thickness()*(get_tail_area_v()+get_tail_area_h()*2)
+    return Vt
+
+
+# MASSES
+
+def get_wing_mass():
+    global Mw
+    if Mw==None:
+        Mw = get_wing_volume()*get_wing_density()
+    return Mw
+def get_tail_mass():
+    global Mt
+    if Mt==None:
+        Mt = get_tail_volume()*get_tail_density()
+    return Mt
+def get_fuselage_mass():
+    global Mf
+    if Mf==None:
+        Mf = get_fuselage_volume()*get_fuselage_density()
+    return Mf
 def get_payload_mass():
     global Mc
     if Mc==None:
         Mc = get_float('What is your payload mass (kg)?', .01)
     return Mc
+def get_plane_mass():
+    return get_payload_mass()+get_tail_mass()+get_wing_mass()+get_fuselage_mass()
+
+# OTHER
+    
+def get_wing_chord():
+    if Cw==None:
+        raise Exception("Requested wing chord before value was calculated.")
+    return Cw
+def get_wingspan():
+    if Lw==None:
+        raise Exception("Requested wing length before value was calculated.")
+    return Lw
 def get_plane_velocity():
     global v
     if v==None:
@@ -95,78 +218,6 @@ def get_drag_constant():
     if cd==None:
         cd = get_float("Drag coefficient?", 0.005)
     return cd
-def calc_lift_force():
-    'calculates for changes due to optimization'
-    # 1.2 is roughly the density of air in kg/m3
-    return (get_lift_constant()*(get_plane_velocity()**2)*get_wing_area()*1.2)/2
-def calc_drag_force():
-    'calculates for changes due to optimization'
-    # 1.2 is roughly the density of air in kg/m3
-    return (get_drag_constant()*(get_plane_velocity()**2)*get_wing_area()*1.2)/2
-def get_wing_density():
-    global Dw
-    if Dw==None:
-        # in kg/m3
-        Dw = ask_density_of('wing')
-    return Dw
-def get_tail_density():
-    global Dt
-    if Dt==None:
-        Dt = ask_density_of('tail')
-    return Dt
-def get_wing_thickness():
-    global Tw
-    if Tw==None:
-        Tw = get_float("Wing thickness (in cm)?")/100 # convert to meters
-    return Tw
-def get_tail_thickness():
-    global Tt
-    if Tt==None:
-        Tt = get_float("Tail thickness (in cm)?")/100 # convert to meters
-    return Tt
-def get_area_fuselage():
-    global Af
-    if Af==None:
-        Af = get_float('Cross-sectional area of fuselage (in cm2)?')/10000
-    return Af
-def get_wing_mass():
-    global Mw
-    if Mw==None:
-        Mw = get_wing_volume()*get_wing_density()
-    return Mw
-def get_wing_chord():
-    if Cw==None:
-        raise Exception("Requested wing chord before value was calculated.")
-    return Cw
-def get_wingspan():
-    if Lw==None:
-        raise Exception("Requested wing length before value was calculated.")
-    return Lw
-def get_wing_area():
-    'returns area of BOTH wings together'
-    global Aw
-    if Aw==None:
-        # we assume that the wing has a parabolic shape for now
-        # 2*2/3*wing length*wing chord
-        Aw = get_wingspan()*get_wing_chord()*2/3
-    return Aw
-def get_center_of_lift():
-    global Qcl
-    if Qcl==None:
-        # value here should be from the center of mass, NOT the actual lift center.
-        # this is because the computer has to calculate the position of the wing,
-        # and that calculation affects the center of lift - that calculation
-        # is based on the center of gravity.
-        Qcl = 0
-    return Qcl
-def get_wing_location():
-    global Qw
-    if Qw==None:
-        # Qw = Qcl + Cw/4   | center of lift is 1/4 the way into the wing
-        # Qcg = Qcl         | center of gravity is at the center of lift
-        Qw = get_center_of_lift() + get_wing_chord()
-    
-    return Qw
 
 """
 steps:
@@ -190,7 +241,7 @@ if __name__=='__main__':
         #
         # Multiplies fuselage size by two to account for the increase in length in both directions away from the wing
 
-        Qtwd = math.sqrt(.4*get_wing_area()*get_wing_chord()*get_tail_thickness()/(2*get_area_fuselage()))
+        Qtwd = math.sqrt(.4*get_wing_area()*get_wing_chord()*get_tail_thickness()/(2*get_fuselage_area()))
 
     else:
         # TODO: find best Qtwd with desired payload capacity instead
@@ -204,4 +255,29 @@ if __name__=='__main__':
         # TODO: optimize wing size here
         raise Exception("ModeNotSupported! (yet)")
 
+    # Now make the center of gravity match the center of lift
     
+    cw4 = get_wing_chord()/4 # cw4 is Cw/4
+
+    # this calculation is very, very large.  So I'm breaking into 3 lines of code.
+    numerator = ((get_wing_mass()*cw4)+((cw4+Qtwd)*get_tail_mass())+get_payload_mass()*cw4)
+    denominator = (get_payload_mass() - (cw4+Qtwd)*get_fuselage_area()*get_fuselage_density()/2)
+    Qw = numerator/denominator
+
+    Qcl = Qw - cw4
+    Qvc = Qw+Qtwd
+    
+    if Qw>1:
+        # use meters
+        print("Payload is at zeo meters.")
+        print("Wing location: {} m".format(Qw))
+        print("Tail location: {} m".format(Qvc))
+        print("Vertical stabilizer area: {} m2".format(get_tail_area_v()))
+        print("Horizontal stabilizer area: {} m2".format(get_tail_area_h()))
+    else:
+        # use centimeters
+        print("Payload is at zeo cm.")
+        print("Wing location: {} cm".format(Qw)*100)
+        print("Tail location: {} cm".format(Qvc)*100)
+        print("Vertical stabilizer area: {} cm2".format(get_tail_area_v()*10000))
+        print("Horizontal stabilizer area: {} cm2".format(get_tail_area_h()*10000))
