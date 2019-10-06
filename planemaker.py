@@ -59,7 +59,7 @@ def get_float(question, default=None):
                 return default
 def get_float_options(question, options, units=''):
     while True:
-        print(question)
+        print('\n'+question)
         for i in options.keys():
             print('{} : {} {}'.format(i, options[i], units))
         inp = input("Enter a number or an option above >")
@@ -279,21 +279,32 @@ if __name__=='__main__':
     Qcl = Qw - cw4
     Qvc = Qw+Qtwd
     Lf = Qvc+math.sqrt(get_tail_area_h())/3
+
+    # make sure we have all data we need loaded for the final results
+    calc_lift_force()
+    calc_drag_force()
+    calc_gravity_force()
+    get_plane_mass()
+    
+
+    print("\n\nResults:")
     
     if Qw>1:
         # use meters
-        print("Payload is at zeo meters.")
+        print("Payload is at zero meters.")
         print("Wing location: {} m".format(Qw))
         print("Tail location: {} m".format(Qvc))
         print("Vertical stabilizer area: {} m2".format(get_tail_area_v()))
         print("Horizontal stabilizer area: {} m2".format(get_tail_area_h()))
     else:
         # use centimeters
-        print("Payload is at zeo cm.")
-        print("Wing location: {} cm".format(Qw)*100)
-        print("Tail location: {} cm".format(Qvc)*100)
+        print("Payload is at zero cm.")
+        print("Wing location: {} cm".format(Qw*100))
+        print("Tail location: {} cm".format(Qvc*100))
         print("Vertical stabilizer area: {} cm2".format(get_tail_area_v()*10000))
         print("Horizontal stabilizer area: {} cm2".format(get_tail_area_h()*10000))
+    print()
+    print("Total plane mass: {} kg".format(get_plane_mass()))
     print("Lift force: {} kg*m/s3".format(calc_lift_force()))
     print("Drag force: {} kg*m/s3".format(calc_drag_force()))
     print("Grav force: {} kg*m/s3".format(calc_gravity_force()))
