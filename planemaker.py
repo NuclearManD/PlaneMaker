@@ -43,6 +43,8 @@ cl = None # lift constant
 cd = None # drag constant
 theta = None # angle of flat wing
 
+wing_shape_coef = None
+
 # QUESTIONS
 
 def ask_yn(question):
@@ -108,10 +110,13 @@ def get_tail_h_coef():
     return Ch
 # FORCES
 
-def calc_lift_force():
+def calc_lift_force(surface_area = None):
     'calculates for changes due to optimization'
+    if surface_area==None:
+        surface_area = get_wing_area()
+    
     # 1.2 is roughly the density of air in kg/m3
-    return (get_lift_constant()*(get_plane_velocity()**2)*get_wing_area()*1.2)/2
+    return (get_lift_constant()*(get_plane_velocity()**2)*surface_area*1.2)/2
 def calc_drag_force():
     'calculates for changes due to optimization'
     # 1.2 is roughly the density of air in kg/m3
@@ -163,8 +168,8 @@ def get_wing_area():
     global Aw
     if Aw==None:
         # we assume that the wing has a parabolic shape for now
-        # 2*2/3*wing length*wing chord
-        Aw = get_wingspan()*get_wing_chord()*2/3
+        # 2/3*wingspan*wing chord
+        Aw = get_wingspan()*get_wing_chord()*get_wing_shape_coef()
     return Aw
 def get_tail_area_v():
     if Avt==None:
@@ -252,13 +257,23 @@ def get_angle_of_wing():
 def get_lift_constant():
     global cl
     if cl==None:
-        cl = 2 * math.pi * get_angle_of_wing()
+        cl = get_float("Lift coef? ")#2 * math.pi * get_angle_of_wing()
     return cl
 def get_drag_constant():
     global cd
     if cd==None:
         cd = get_float("Drag coefficient?", 0.005)
     return cd
+def get_wing_shape_coef():
+    global wing_shape_coef
+    if wing_shape_coef==None:
+        options = {
+            'Rectangle': 1,
+            'Parabolic':.667,
+            'Triangle' :.5
+            }
+        wing_shape_coef = get_float_options('Wing Area Coef?', options)
+    return wing_shape_coef
 
 def print_results():
     print("\n\nResults:")
